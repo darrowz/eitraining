@@ -89,6 +89,7 @@ def test_build_replay_results_records_paired_win_loss_and_versions() -> None:
     assert result["paired_summary"]["win_count"] == 1
     assert result["paired_summary"]["loss_count"] == 1
     assert result["passed"] is False
+    assert result["regression_count"] == 1
     assert "paired_replay_losses_detected" in result["details"]["blocked_reasons"]
     assert {case["outcome"] for case in result["cases"]} == {"win", "loss"}
 

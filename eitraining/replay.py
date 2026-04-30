@@ -46,7 +46,9 @@ def _result_for_skill(skill_id: str, asset: dict[str, Any], traces: list[dict[st
     win_count = sum(1 for case in paired_cases if case["outcome"] == "win")
     loss_count = sum(1 for case in paired_cases if case["outcome"] == "loss")
     tie_count = sum(1 for case in paired_cases if case["outcome"] == "tie")
-    regression_count = sum(1 for trace in traces if _trace_failed(trace)) + loss_count
+    regression_count = sum(
+        1 for trace, case in zip(traces, paired_cases, strict=False) if _trace_failed(trace) or case["outcome"] == "loss"
+    )
     pass_rate = round(pass_count / sample_count, 4) if sample_count else 0.0
     baseline_pass_rate = _baseline_pass_rate(paired_cases)
     score_delta = round(pass_rate - baseline_pass_rate, 4) if baseline_pass_rate is not None else None
