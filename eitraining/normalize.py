@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from .memory_scoring import extract_memory_scoring, is_rejected_memory
+
 
 def normalize_experience(record: dict[str, Any]) -> dict[str, Any]:
     """Flatten eimemory record envelopes into a replay-friendly experience item."""
@@ -17,11 +19,15 @@ def normalize_experience(record: dict[str, Any]) -> dict[str, Any]:
     normalized["record_id"] = str(record.get("record_id") or normalized.get("record_id") or "")
     normalized["id"] = str(normalized.get("id") or normalized.get("trace_id") or record.get("record_id") or "")
     normalized["report_type"] = str(report_type or normalized.get("report_type") or "")
-    normalized["meta"] = {**meta, **payload_meta}
+    merged_meta = {**meta, **payload_meta}
+    normalized["meta"] = merged_meta
     normalized["provenance"] = provenance
     normalized["summary"] = str(normalized.get("input_summary") or record.get("summary") or normalized.get("summary") or "")
     if not normalized.get("selected_skills") and meta.get("selected_skill_ids"):
         normalized["selected_skills"] = meta.get("selected_skill_ids")
+    memory_scoring = extract_memory_scoring(merged_meta)
+    if memory_scoring is not None:
+        normalized["memory_scoring"] = memory_scoring
     return normalized
 
 
@@ -34,6 +40,8 @@ def _is_meaningful_skill_trace(item: dict[str, Any]) -> bool:
     if item.get("report_type") != "skill_trace":
         return False
     meta = item.get("meta") if isinstance(item.get("meta"), dict) else {}
+    if is_rejected_memory(meta):
+        return False
     if not (meta.get("write_policy_version") == "meaningful_event_v1" or meta.get("trace_reason")):
         return False
     return bool(item.get("id") and item.get("selected_skills"))

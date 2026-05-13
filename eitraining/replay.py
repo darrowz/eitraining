@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 from typing import Any
 
+from .memory_scoring import extract_memory_scoring
 from .normalize import evidence_id, meaningful_skill_traces, selected_skill_ids
 
 SUCCESS_OUTCOMES = {"planned", "success", "succeeded", "accepted", "ok", "completed"}
@@ -96,6 +97,7 @@ def _result_for_skill(skill_id: str, asset: dict[str, Any], traces: list[dict[st
             "min_samples": min_samples,
             "min_pass_rate": min_pass_rate,
             "pass_count": pass_count,
+            "memory_tier_counts": _memory_tier_counts(traces),
             "blocked_reasons": _blocked_reasons(sample_count, pass_rate, regression_count, min_samples, min_pass_rate, loss_count),
         },
     }
@@ -125,6 +127,8 @@ def _paired_case(skill_id: str, asset: dict[str, Any], trace: dict[str, Any]) ->
         "task_type": str(trace.get("task_type") or ""),
         "input_hash": _hash_text(str(trace.get("summary") or trace.get("input_summary") or "")),
         "failure_category": _failure_category(trace),
+        "memory_tier": _memory_tier(trace),
+        "memory_final_score": _memory_final_score(trace),
     }
 
 
@@ -170,6 +174,39 @@ def _trace_failed(trace: dict[str, Any]) -> bool:
 def _failure_category(trace: dict[str, Any]) -> str:
     meta = trace.get("meta") if isinstance(trace.get("meta"), dict) else {}
     return str(trace.get("failure_category") or meta.get("failure_category") or "")
+
+
+def _memory_tier_counts(traces: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for trace in traces:
+        tier = _memory_tier(trace)
+        if tier:
+            counts[tier] = counts.get(tier, 0) + 1
+    return counts
+
+
+def _memory_tier(trace: dict[str, Any]) -> str:
+    scoring = _memory_scoring(trace)
+    return str(scoring.get("tier") or "") if scoring else ""
+
+
+def _memory_final_score(trace: dict[str, Any]) -> float | None:
+    scoring = _memory_scoring(trace)
+    if not scoring:
+        return None
+    value = scoring.get("final_score")
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _memory_scoring(trace: dict[str, Any]) -> dict[str, Any] | None:
+    value = trace.get("memory_scoring")
+    if isinstance(value, dict):
+        return value
+    meta = trace.get("meta") if isinstance(trace.get("meta"), dict) else {}
+    return extract_memory_scoring(meta)
 
 
 def _blocked_reasons(sample_count: int, pass_rate: float, regression_count: int, min_samples: int, min_pass_rate: float, loss_count: int) -> list[str]:
