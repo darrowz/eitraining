@@ -20,6 +20,12 @@ Boundary:
 - eiskills owns skill registry, promotion, rollback, and routing.
 - eitraining owns evaluation artifacts and training datasets.
 
+## Deployment
+
+Production runs should execute released code from `/opt/eitraining/current`, read
+inputs from `/var/lib/eimemory` and `/var/lib/eiskills`, and write outcomes under
+`/var/lib/eitraining`. Deployment templates live in `deploy/`.
+
 ## Memory Scoring Contract
 
 `eitraining` reads memory quality from `meta.scoring.memory_score_v1` when it is

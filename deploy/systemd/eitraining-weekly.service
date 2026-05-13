@@ -1,0 +1,22 @@
+[Unit]
+Description=eitraining weekly replay and training pipeline
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/eitraining/current
+Environment=EITRAINING_STATE_DIR=/var/lib/eitraining
+Environment=EITRAINING_EXPERIENCES=/var/lib/eimemory/exports/experiences.jsonl
+Environment=EITRAINING_REGISTRY=/var/lib/eiskills/skills.jsonl
+Environment=EITRAINING_OUTPUT_DIR=/var/lib/eitraining/outcomes
+EnvironmentFile=-/etc/eitraining/eitraining.env
+ExecStart=/bin/sh -lc 'exec /opt/eitraining/current/.venv/bin/eitraining run-loop --experiences "$EITRAINING_EXPERIENCES" --registry "$EITRAINING_REGISTRY" --output-dir "$EITRAINING_OUTPUT_DIR"'
+StandardOutput=append:/var/log/eitraining/weekly.service.log
+StandardError=append:/var/log/eitraining/weekly.service.log
+Nice=10
+NoNewPrivileges=yes
+PrivateTmp=yes
+MemoryMax=1G
+CPUQuota=80%
+TasksMax=64

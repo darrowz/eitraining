@@ -1,0 +1,10 @@
+[Unit]
+Description=Run eitraining weekly replay and training pipeline
+
+[Timer]
+OnCalendar=Sun *-*-* 04:15:00
+Persistent=true
+Unit=eitraining-weekly.service
+
+[Install]
+WantedBy=timers.target
