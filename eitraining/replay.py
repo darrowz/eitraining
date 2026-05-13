@@ -1,3 +1,13 @@
+"""Replay artifact generation for `eiskills` promotion validation.
+
+Boundary note:
+- `eitraining` turns normalized experiences into this replay schema and writes it
+  to disk as plain JSON.
+- Downstream packages (currently `eiskills`) consume the resulting rows as opaque
+  dictionaries to make promotion decisions, so the transport contract is schema
+  based and avoids import-time coupling.
+"""
+
 from __future__ import annotations
 
 import hashlib
@@ -17,6 +27,12 @@ def build_replay_results(
     min_samples: int = 2,
     min_pass_rate: float = 0.8,
 ) -> list[dict[str, Any]]:
+    """Build replay rows for each registry skill asset.
+
+    The output keys are intentionally aligned with `eiskills` replay-gate inputs
+    (`passed`, `pass_rate`, `sample_count`, `regression_count`, `paired_summary`)
+    so the two packages can exchange data via JSON only.
+    """
     traces = meaningful_skill_traces(experiences)
     traces_by_id = {evidence_id(trace): trace for trace in traces if evidence_id(trace)}
     results: list[dict[str, Any]] = []
